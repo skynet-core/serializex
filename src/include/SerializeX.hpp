@@ -5,7 +5,6 @@
 #include <boost/json.hpp>
 #include <boost/pfr.hpp>
 #include <boost/pfr/core_name.hpp>
-#include <cmath>
 #include <cstddef>
 #include <memory>
 #include <optional>
@@ -174,7 +173,7 @@ namespace SerializeX
     std::enable_if_t<std::is_aggregate_v<T>, std::ostream &>
     Write(std::ostream &out, const T &obj)
     {
-      out << std::string(Serializer{obj});
+      out << Serializer{obj};
       return out;
     }
 
@@ -232,7 +231,7 @@ namespace SerializeX
     {
       if (obj)
       {
-        out << std::string(Serializer{*obj});
+        out << Serializer{*obj};
       }
       else
       {
@@ -247,7 +246,7 @@ namespace SerializeX
     {
       if (obj)
       {
-        out << std::string(Serializer{*obj});
+        out << Serializer{*obj};
       }
       else
       {
@@ -262,7 +261,7 @@ namespace SerializeX
     {
       if (obj)
       {
-        out << std::string(Serializer{*obj});
+        out << Serializer{*obj};
       }
       else
       {
@@ -275,23 +274,24 @@ namespace SerializeX
     struct Serializer
     {
       Serializer(const T &obj) : Obj(obj) {}
-      const T &Obj;
 
-      operator std::string() const
+      friend std::ostream &operator<<(std::ostream &os, const Serializer &obj)
       {
-        std::stringstream ss;
-        ss << "{";
-        ForEachField(Obj, [&](const auto &field)
+        os << "{";
+        ForEachField(obj.Obj, [&](const auto &field)
                      {
-      if constexpr (std::decay_t<decltype(field)>::Index > 0) {
-        ss << ",";
+            if constexpr (std::decay_t<decltype(field)>::Index > 0) {
+              os << ",";
+            }
+            Write(os, std::decay_t<decltype(field)>::Name);
+            os << ":";
+            Write(os, field.Value); });
+        os << "}";
+        return os;
       }
-      Write(ss, std::decay_t<decltype(field)>::Name);
-      ss << ":";
-      Write(ss, field.Value); });
-        ss << "}";
-        return ss.str();
-      }
+
+    private:
+      const T &Obj;
     };
 
   } // namespace Json
